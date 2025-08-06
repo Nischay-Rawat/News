@@ -177,6 +177,15 @@ export default function Home() {
                   {city.name}
                 </Link>
               ))}
+              {availableCategories.map((category) => (
+                <Link
+                  key={category.key}
+                  href={`/category/${category.name_en.toLowerCase()}`}
+                  className="block py-2 px-3 rounded hover:bg-muted"
+                >
+                  {language === "hi" ? category.name_hi : category.name_en}
+                </Link>
+              ))}
             </div>
           </div>
         )}
@@ -226,8 +235,10 @@ export default function Home() {
               <TabsList className="w-full sm:w-auto">
                 <TabsTrigger value="latest">{t.tabs.latest}</TabsTrigger>
                 {availableCategories.slice(0, 2).map((category) => (
-                  <TabsTrigger key={category.key} value={category.key}>
-                    {language === "hi" ? category.name_hi : category.name_en}
+                  <TabsTrigger key={category.key} value={category.key} asChild>
+                    <Link href={`/category/${category.name_en.toLowerCase()}`}>
+                      {language === "hi" ? category.name_hi : category.name_en}
+                    </Link>
                   </TabsTrigger>
                 ))}
               </TabsList>

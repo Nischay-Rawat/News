@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Menu, ChevronRight } from "lucide-react"
+import { Menu, ChevronRight } from 'lucide-react'
 import { useLanguage } from "@/components/language-provider"
 
 interface Category {
@@ -64,7 +64,7 @@ export default function MobileNavigation({ categories, cities }: MobileNavigatio
                   {categories.map((category) => (
                     <Link
                       key={category.key}
-                      href={`/category/${category.name_en}`}
+                      href={`/category/${category.name_en.toLowerCase()}`}
                       className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-muted transition-colors"
                       onClick={() => setOpen(false)}
                     >

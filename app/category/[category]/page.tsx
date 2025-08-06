@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, Clock, MapPin, Loader2 } from "lucide-react"
+import { ChevronLeft, Clock, MapPin, Loader2 } from 'lucide-react'
 import { useLanguage } from "@/components/language-provider"
 import LanguageSwitch from "@/components/language-switch"
 import MobileNavigation from "@/components/mobile-navigation"
@@ -89,24 +89,38 @@ export default function CategoryPage({ params }: { params: { category: string } 
     const fetchCategoryNews = async () => {
       try {
         setLoading(true)
-        const response = await fetch(`https://api.garhwalisonglyrics.com/api/v1/news/category/${params.category}`)
-
-        if (response.ok) {
-          const contentType = response.headers.get("content-type")
-          if (contentType && contentType.includes("application/json")) {
-            const data = await response.json()
-            if (data.success) {
-              setNewsData(data)
-              setError(null)
-            } else {
-              setError(language === "hi" ? "समाचार लोड नहीं हो सके" : "Failed to load news")
+        // Try different category name formats
+        const categoryVariants = [
+          params.category,
+          params.category.toLowerCase(),
+          params.category.charAt(0).toUpperCase() + params.category.slice(1).toLowerCase()
+        ]
+        
+        let response
+        let data
+        
+        for (const categoryName of categoryVariants) {
+          try {
+            response = await fetch(`https://api.garhwalisonglyrics.com/api/v1/news/category/${categoryName}`)
+            if (response.ok) {
+              const contentType = response.headers.get("content-type")
+              if (contentType && contentType.includes("application/json")) {
+                data = await response.json()
+                if (data.success) {
+                  setNewsData(data)
+                  setError(null)
+                  return
+                }
+              }
             }
-          } else {
-            setError(language === "hi" ? "अमान्य प्रतिक्रिया प्रारूप" : "Invalid response format")
+          } catch (err) {
+            console.warn(`Failed to fetch with category name: ${categoryName}`)
+            continue
           }
-        } else {
-          setError(language === "hi" ? "समाचार लोड नहीं हो सके" : "Failed to load news")
         }
+        
+        // If all variants fail
+        setError(language === "hi" ? "समाचार लोड नहीं हो सके" : "Failed to load news")
       } catch (err) {
         console.error("Error fetching category news:", err)
         setError(language === "hi" ? "नेटवर्क त्रुटि" : "Network error")
@@ -130,68 +144,19 @@ export default function CategoryPage({ params }: { params: { category: string } 
   }
 
   const getCategoryDisplayName = () => {
-    if (newsData?.data.data.length > 0) {
+    if (newsData?.success && newsData.data?.data && newsData.data.data.length > 0) {
       const firstItem = newsData.data.data[0]
       return language === "hi" ? firstItem.category.name_hi : firstItem.category.name_en
     }
-    return params.category
-  }
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container flex h-16 items-center justify-between py-4">
-            <div className="flex items-center gap-2">
-              <MobileNavigation categories={defaultCategories} cities={defaultCities} />
-              <Link href="/" className="flex items-center space-x-2">
-                <span className="text-xl md:text-2xl font-bold text-primary">
-                  {language === "hi" ? "इनसाइड उत्तराखंड न्यूज़" : "Inside Uttarakhand News"}
-                </span>
-              </Link>
-            </div>
-            <LanguageSwitch />
-          </div>
-        </header>
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">{language === "hi" ? "समाचार लोड हो रहे हैं..." : "Loading news..."}</p>
-          </div>
-        </main>
-      </div>
-    )
-  }
-
-  if (error || !newsData?.success) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container flex h-16 items-center justify-between py-4">
-            <div className="flex items-center gap-2">
-              <MobileNavigation categories={defaultCategories} cities={defaultCities} />
-              <Link href="/" className="flex items-center space-x-2">
-                <span className="text-xl md:text-2xl font-bold text-primary">
-                  {language === "hi" ? "इनसाइड उत्तराखंड न्यूज़" : "Inside Uttarakhand News"}
-                </span>
-              </Link>
-            </div>
-            <LanguageSwitch />
-          </div>
-        </header>
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center max-w-md mx-auto p-6">
-            <h1 className="text-2xl font-bold mb-4">{language === "hi" ? "समाचार नहीं मिले" : "No News Found"}</h1>
-            <p className="text-muted-foreground mb-4">
-              {error || (language === "hi" ? "इस श्रेणी में कोई समाचार उपलब्ध नहीं है" : "No news available in this category")}
-            </p>
-            <Button asChild>
-              <Link href="/">{language === "hi" ? "होम पर वापस जाएं" : "Go Back Home"}</Link>
-            </Button>
-          </div>
-        </main>
-      </div>
-    )
+  
+    // Fallback to format the category parameter nicely
+    const categoryName = params.category
+    if (categoryName === "accidents") {
+      return language === "hi" ? "दुर्घटनाएं" : "Accidents"
+    }
+  
+    // Default fallback - capitalize first letter
+    return categoryName.charAt(0).toUpperCase() + categoryName.slice(1)
   }
 
   return (
@@ -224,63 +189,81 @@ export default function CategoryPage({ params }: { params: { category: string } 
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold mb-2">{getCategoryDisplayName()}</h1>
                 <p className="text-muted-foreground">
-                  {newsData.data.total} {language === "hi" ? "समाचार मिले" : "news articles found"}
+                  {newsData?.data?.total || 0} {language === "hi" ? "समाचार मिले" : "news articles found"}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {newsData.data.data.map((news) => (
-              <div key={news.slug} className="group">
-                <Link href={`/article/${news.slug}`}>
-                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg mb-3">
-                    <Image
-                      src={news.image_url || "/placeholder.svg?height=300&width=400&query=uttarakhand news"}
-                      alt={news.title[language]}
-                      fill
-                      className="object-cover transition-transform group-hover:scale-105"
-                    />
-                    {news.is_breaking && (
-                      <div className="absolute top-2 left-2 bg-red-600 text-white px-2 py-1 rounded text-xs font-medium">
-                        {language === "hi" ? "ब्रेकिंग" : "Breaking"}
+          {newsData?.success && newsData.data?.data && newsData.data.data.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {newsData.data.data.map((news) => (
+                  <div key={news.slug} className="group">
+                    <Link href={`/article/${news.slug}`}>
+                      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg mb-3">
+                        <Image
+                          src={news.image_url || "/placeholder.svg?height=300&width=400&query=uttarakhand news"}
+                          alt={news.title[language]}
+                          fill
+                          className="object-cover transition-transform group-hover:scale-105"
+                        />
+                        {news.is_breaking && (
+                          <div className="absolute top-2 left-2 bg-red-600 text-white px-2 py-1 rounded text-xs font-medium">
+                            {language === "hi" ? "ब्रेकिंग" : "Breaking"}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <h3 className="text-base font-semibold group-hover:text-primary transition-colors line-clamp-2 mb-2">
-                    {news.title[language]}
-                  </h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{news.description}</p>
-                  <div className="flex items-center text-xs text-muted-foreground space-x-3">
-                    {news.city && (
-                      <div className="flex items-center">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        <span>{news.city.name[language]}</span>
+                      <h3 className="text-base font-semibold group-hover:text-primary transition-colors line-clamp-2 mb-2">
+                        {news.title[language]}
+                      </h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{news.description}</p>
+                      <div className="flex items-center text-xs text-muted-foreground space-x-3">
+                        {news.city && (
+                          <div className="flex items-center">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            <span>{news.city.name[language]}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center">
+                          <Clock className="h-3 w-3 mr-1" />
+                          <span>{formatTimeAgo(news.hours_ago)}</span>
+                        </div>
                       </div>
-                    )}
-                    <div className="flex items-center">
-                      <Clock className="h-3 w-3 mr-1" />
-                      <span>{formatTimeAgo(news.hours_ago)}</span>
-                    </div>
+                      {news.views > 0 && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {news.views} {language === "hi" ? "बार देखा गया" : "views"}
+                        </div>
+                      )}
+                    </Link>
                   </div>
-                  {news.views > 0 && (
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {news.views} {language === "hi" ? "बार देखा गया" : "views"}
-                    </div>
-                  )}
-                </Link>
+                ))}
               </div>
-            ))}
-          </div>
 
-          {newsData.data.totalPages > 1 && (
-            <div className="flex justify-center mt-8">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-muted-foreground">
-                  {language === "hi" ? "पृष्ठ" : "Page"} {newsData.data.page} {language === "hi" ? "का" : "of"}{" "}
-                  {newsData.data.totalPages}
-                </span>
-              </div>
+              {newsData.data.totalPages > 1 && (
+                <div className="flex justify-center mt-8">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-muted-foreground">
+                      {language === "hi" ? "पृष्ठ" : "Page"} {newsData.data.page} {language === "hi" ? "का" : "of"}{" "}
+                      {newsData.data.totalPages}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : !loading && (
+            <div className="text-center py-12">
+              <h2 className="text-xl font-semibold mb-2">
+                {language === "hi" ? "कोई समाचार नहीं मिला" : "No news found"}
+              </h2>
+              <p className="text-muted-foreground mb-4">
+                {language === "hi" 
+                  ? "इस श्रेणी में अभी कोई समाचार उपलब्ध नहीं है।" 
+                  : "No news articles are currently available in this category."}
+              </p>
+              <Button asChild>
+                <Link href="/">{language === "hi" ? "होम पर वापस जाएं" : "Go Back Home"}</Link>
+              </Button>
             </div>
           )}
         </div>
