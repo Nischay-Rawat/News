@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ChevronLeft, ChevronRight, Tag, Calendar, Eye, Heart, Share2, MapPin } from 'lucide-react'
+import { ChevronLeft, ChevronRight, MapPin, Calendar, Eye, Heart, Share2 } from 'lucide-react'
 import Footer from '@/components/footer'
 
 interface NewsArticle {
@@ -49,47 +49,50 @@ interface ApiResponse {
   }
 }
 
-interface CategoryPageProps {
+interface CityPageProps {
   params: {
-    category: string
+    city: string
   }
   searchParams: {
     page?: string
   }
 }
 
-// Function to get category display name
-function getCategoryDisplayName(categoryParam: string, language: 'hi' | 'en' = 'en') {
-  const categoryMappings: Record<string, { en: string; hi: string }> = {
-    'politics': { en: 'Politics', hi: 'राजनीति' },
-    'tourism': { en: 'Tourism', hi: 'पर्यटन' },
-    'education': { en: 'Education', hi: 'शिक्षा' },
-    'accidents': { en: 'Accidents', hi: 'दुर्घटनाएँ' },
-    'health': { en: 'Health', hi: 'स्वास्थ्य' },
-    'sports': { en: 'Sports', hi: 'खेल' },
-    'business': { en: 'Business', hi: 'व्यापार' },
-    'election': { en: 'Election', hi: 'चुनाव' },
-    'crime': { en: 'Crime', hi: 'अपराध' },
-    'environment': { en: 'Environment', hi: 'पर्यावरण' }
+// Function to get city display name
+function getCityDisplayName(cityParam: string, language: 'hi' | 'en' = 'en') {
+  const cityMappings: Record<string, { en: string; hi: string }> = {
+    'dehradun': { en: 'Dehradun', hi: 'देहरादून' },
+    'nainital': { en: 'Nainital', hi: 'नैनीताल' },
+    'haridwar': { en: 'Haridwar', hi: 'हरिद्वार' },
+    'mussoorie': { en: 'Mussoorie', hi: 'मसूरी' },
+    'rishikesh': { en: 'Rishikesh', hi: 'ऋषिकेश' },
+    'almora': { en: 'Almora', hi: 'अल्मोड़ा' },
+    'pauri': { en: 'Pauri', hi: 'पौड़ी' },
+    'bageshwar': { en: 'Bageshwar', hi: 'बागेश्वर' },
+    'chamoli': { en: 'Chamoli', hi: 'चमोली' },
+    'uttarkashi': { en: 'Uttarkashi', hi: 'उत्तरकाशी' },
+    'pithoragarh': { en: 'Pithoragarh', hi: 'पिथौरागढ़' },
+    'rudraprayag': { en: 'Rudraprayag', hi: 'रुद्रप्रयाग' },
+    'tehri': { en: 'Tehri', hi: 'टिहरी' }
   }
 
-  const categoryKey = categoryParam.toLowerCase()
-  const categoryInfo = categoryMappings[categoryKey]
+  const cityKey = cityParam.toLowerCase()
+  const cityInfo = cityMappings[cityKey]
   
-  if (categoryInfo) {
-    return categoryInfo[language]
+  if (cityInfo) {
+    return cityInfo[language]
   }
   
   // Fallback: capitalize first letter
-  return categoryParam.charAt(0).toUpperCase() + categoryParam.slice(1)
+  return cityParam.charAt(0).toUpperCase() + cityParam.slice(1)
 }
 
-async function fetchCategoryNews(category: string, page: number = 1): Promise<ApiResponse> {
-  const categoryName = getCategoryDisplayName(category, 'en')
+async function fetchCityNews(city: string, page: number = 1): Promise<ApiResponse> {
+  const cityName = getCityDisplayName(city, 'en')
   
   try {
     const response = await fetch(
-      `https://api.garhwalisonglyrics.com/api/v1/news/category/${categoryName}?page=${page}&limit=10`,
+      `https://api.garhwalisonglyrics.com/api/v1/news/city/${cityName}?page=${page}&limit=10`,
       {
         next: { revalidate: 300 }, // Cache for 5 minutes
         headers: {
@@ -106,9 +109,18 @@ async function fetchCategoryNews(category: string, page: number = 1): Promise<Ap
     const data = await response.json()
     return data
   } catch (error) {
-    console.error('Error fetching category news:', error)
+    console.error('Error fetching city news:', error)
     throw error
   }
+}
+
+function formatDate(dateString: string): string {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('hi-IN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
 }
 
 function NewsCard({ article }: { article: NewsArticle }) {
@@ -193,11 +205,11 @@ function NewsCard({ article }: { article: NewsArticle }) {
 function PaginationControls({ 
   currentPage, 
   totalPages, 
-  category 
+  city 
 }: { 
   currentPage: number
   totalPages: number
-  category: string
+  city: string
 }) {
   if (totalPages <= 1) return null
 
@@ -219,7 +231,7 @@ function PaginationControls({
     <div className="flex items-center justify-center gap-2 mt-8">
       {currentPage > 1 && (
         <Button variant="outline" size="sm" asChild>
-          <Link href={`/category/${category}?page=${currentPage - 1}`}>
+          <Link href={`/city/${city}?page=${currentPage - 1}`}>
             <ChevronLeft className="h-4 w-4 mr-1" />
             पिछला
           </Link>
@@ -229,7 +241,7 @@ function PaginationControls({
       {startPage > 1 && (
         <>
           <Button variant="outline" size="sm" asChild>
-            <Link href={`/category/${category}?page=1`}>1</Link>
+            <Link href={`/city/${city}?page=1`}>1</Link>
           </Button>
           {startPage > 2 && <span className="px-2">...</span>}
         </>
@@ -242,7 +254,7 @@ function PaginationControls({
           size="sm"
           asChild
         >
-          <Link href={`/category/${category}?page=${page}`}>
+          <Link href={`/city/${city}?page=${page}`}>
             {page}
           </Link>
         </Button>
@@ -252,7 +264,7 @@ function PaginationControls({
         <>
           {endPage < totalPages - 1 && <span className="px-2">...</span>}
           <Button variant="outline" size="sm" asChild>
-            <Link href={`/category/${category}?page=${totalPages}`}>
+            <Link href={`/city/${city}?page=${totalPages}`}>
               {totalPages}
             </Link>
           </Button>
@@ -261,7 +273,7 @@ function PaginationControls({
 
       {currentPage < totalPages && (
         <Button variant="outline" size="sm" asChild>
-          <Link href={`/category/${category}?page=${currentPage + 1}`}>
+          <Link href={`/city/${city}?page=${currentPage + 1}`}>
             अगला
             <ChevronRight className="h-4 w-4 ml-1" />
           </Link>
@@ -298,31 +310,31 @@ function LoadingSkeleton() {
   )
 }
 
-export async function generateMetadata({ params }: CategoryPageProps) {
-  const categoryName = getCategoryDisplayName(params.category, 'hi')
-  const categoryNameEn = getCategoryDisplayName(params.category, 'en')
+export async function generateMetadata({ params }: CityPageProps) {
+  const cityName = getCityDisplayName(params.city, 'hi')
+  const cityNameEn = getCityDisplayName(params.city, 'en')
   
   return {
-    title: `${categoryName} की ताज़ा खबरें | Inside Uttarakhand News`,
-    description: `${categoryName} (${categoryNameEn}) से जुड़ी सभी ताज़ा खबरें, अपडेट और समाचार पढ़ें। उत्तराखंड की विश्वसनीय न्यूज़ वेबसाइट पर।`,
-    keywords: `${categoryName}, ${categoryNameEn}, उत्तराखंड न्यूज़, ताज़ा खबरें, समाचार`,
+    title: `${cityName} की ताज़ा खबरें | Inside Uttarakhand News`,
+    description: `${cityName} (${cityNameEn}) से जुड़ी सभी ताज़ा खबरें, अपडेट और समाचार पढ़ें। उत्तराखंड की विश्वसनीय न्यूज़ वेबसाइट पर।`,
+    keywords: `${cityName}, ${cityNameEn}, उत्तराखंड न्यूज़, ताज़ा खबरें, समाचार`,
     openGraph: {
-      title: `${categoryName} की ताज़ा खबरें`,
-      description: `${categoryName} से जुड़ी सभी ताज़ा खबरें और अपडेट`,
+      title: `${cityName} की ताज़ा खबरें`,
+      description: `${cityName} से जुड़ी सभी ताज़ा खबरें और अपडेट`,
       type: 'website',
     }
   }
 }
 
-export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
+export default async function CityPage({ params, searchParams }: CityPageProps) {
   const currentPage = parseInt(searchParams.page || '1', 10)
-  const categoryName = getCategoryDisplayName(params.category, 'hi')
-  const categoryNameEn = getCategoryDisplayName(params.category, 'en')
+  const cityName = getCityDisplayName(params.city, 'hi')
+  const cityNameEn = getCityDisplayName(params.city, 'en')
 
   let newsData: ApiResponse
   
   try {
-    newsData = await fetchCategoryNews(params.category, currentPage)
+    newsData = await fetchCityNews(params.city, currentPage)
   } catch (error) {
     notFound()
   }
@@ -335,22 +347,22 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
             <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-4">
               <Link href="/" className="hover:text-primary">होम</Link>
               <span>/</span>
-              <span>{categoryName}</span>
+              <span>{cityName}</span>
             </nav>
             
             <h1 className="text-3xl font-bold mb-2">
-              {categoryName} की खबरें
+              {cityName} की खबरें
             </h1>
             <p className="text-muted-foreground">
-              {categoryName} से जुड़ी ताज़ा खबरें और अपडेट
+              {cityName} से जुड़ी ताज़ा खबरें और अपडेट
             </p>
           </div>
 
           <div className="text-center py-12">
-            <Tag className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+            <MapPin className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold mb-2">कोई खबर नहीं मिली</h2>
             <p className="text-muted-foreground mb-4">
-              {categoryName} से संबंधित कोई समाचार उपलब्ध नहीं है।
+              {cityName} से संबंधित कोई समाचार उपलब्ध नहीं है।
             </p>
             <Button asChild>
               <Link href="/">सभी खबरें देखें</Link>
@@ -371,19 +383,19 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
           <Link href="/" className="hover:text-primary">होम</Link>
           <span>/</span>
-          <span>{categoryName}</span>
+          <span>{cityName}</span>
         </nav>
 
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <Tag className="h-8 w-8 text-primary" />
+            <MapPin className="h-8 w-8 text-primary" />
             <div>
               <h1 className="text-3xl font-bold">
-                {categoryName} की खबरें
+                {cityName} की खबरें
               </h1>
               <p className="text-muted-foreground">
-                {categoryName} से जुड़ी {total} ताज़ा खबरें
+                {cityName} से जुड़ी {total} ताज़ा खबरें
               </p>
             </div>
           </div>
@@ -402,7 +414,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         <PaginationControls 
           currentPage={currentPage}
           totalPages={totalPages}
-          category={params.category}
+          city={params.city}
         />
 
         {/* Page Info */}

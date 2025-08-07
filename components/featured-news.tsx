@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Link from "next/link"
 import { CalendarDays, Clock } from 'lucide-react'
 import { Badge } from "@/components/ui/badge"
@@ -26,70 +25,25 @@ interface DashboardData {
   }
 }
 
-export default function FeaturedNews() {
+interface FeaturedNewsProps {
+  dashboardData: DashboardData | null
+}
+
+export default function FeaturedNews({ dashboardData }: FeaturedNewsProps) {
   const { language } = useLanguage()
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("https://api.garhwalisonglyrics.com/api/v1/news/dashboard")
-        if (response.ok) {
-          const data = await response.json()
-          if (data.success) {
-            setDashboardData(data)
-          }
-        }
-      } catch (error) {
-        console.warn("API not available, using fallback")
-        // Fallback data
-        setDashboardData({
-          success: true,
-          data: {
-            breaking_news: [
-              {
-                slug: "uttarakhand-tourism-boost",
-                title: {
-                  hi: "उत्तराखंड के पहाड़ों में नया पर्यटन केंद्र, पर्यटकों की संख्या बढ़ने की उम्मीद",
-                  en: "New tourism center in Uttarakhand mountains, expected increase in tourist numbers",
-                },
-                description: "राज्य सरकार ने उत्तराखंड के पहाड़ी क्षेत्रों में नए पर्यटन केंद्र विकसित करने की योजना की घोषणा की है।",
-                image_url: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600",
-                published_at: "2025-01-24T10:45:33.443768Z",
-                hours_ago: 2,
-              },
-              {
-                slug: "char-dham-yatra-record",
-                title: {
-                  hi: "चारधाम यात्रा: इस साल रिकॉर्ड तीर्थयात्रियों की संख्या",
-                  en: "Char Dham Yatra: Record number of pilgrims this year",
-                },
-                description: "इस साल चारधाम यात्रा में रिकॉर्ड संख्या में तीर्थयात्री पहुंचे हैं।",
-                image_url: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800&h=600",
-                published_at: "2025-01-24T08:30:33.443768Z",
-                hours_ago: 4,
-              },
-            ],
-            latest_news_by_category: [],
-          },
-        })
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [])
 
   const formatTimeAgo = (hoursAgo: number) => {
     if (hoursAgo < 1) {
       return language === "hi" ? "अभी" : "Now"
     } else if (hoursAgo < 24) {
-      return language === "hi" ? `${Math.floor(hoursAgo)} घंटे पहले` : `${Math.floor(hoursAgo)} hours ago`
+      return language === "hi" 
+        ? `${Math.floor(hoursAgo)} घंटे पहले`
+        : `${Math.floor(hoursAgo)} hours ago`
     } else {
       const daysAgo = Math.floor(hoursAgo / 24)
-      return language === "hi" ? `${daysAgo} दिन पहले` : `${daysAgo} days ago`
+      return language === "hi" 
+        ? `${daysAgo} दिन पहले`
+        : `${daysAgo} days ago`
     }
   }
 
@@ -110,38 +64,46 @@ export default function FeaturedNews() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="aspect-[16/9] w-full bg-muted rounded-lg animate-pulse"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[1, 2].map((i) => (
-            <div key={i} className="space-y-3">
-              <div className="aspect-[16/9] w-full bg-muted rounded-lg animate-pulse"></div>
-              <div className="h-4 bg-muted rounded animate-pulse"></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    )
-  }
+  // Fallback data if API is not available
+  const fallbackNews = [
+    {
+      slug: "uttarakhand-tourism-boost",
+      title: {
+        hi: "उत्तराखंड के पहाड़ों में नया पर्यटन केंद्र, पर्यटकों की संख्या बढ़ने की उम्मीद",
+        en: "New tourism center in Uttarakhand mountains, expected increase in tourist numbers",
+      },
+      description: language === "hi" 
+        ? "राज्य सरकार ने उत्तराखंड के पहाड़ी क्षेत्रों में नए पर्यटन केंद्र विकसित करने की योजना की घोषणा की है।"
+        : "The state government has announced plans to develop new tourism centers in the mountainous regions of Uttarakhand.",
+      image_url: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600",
+      published_at: "2025-01-24T10:45:33.443768Z",
+      hours_ago: 2,
+    },
+    {
+      slug: "char-dham-yatra-record",
+      title: {
+        hi: "चारधाम यात्रा: इस साल रिकॉर्ड तीर्थयात्रियों की संख्या",
+        en: "Char Dham Yatra: Record number of pilgrims this year",
+      },
+      description: language === "hi"
+        ? "इस साल की चारधाम यात्रा में रिकॉर्ड संख्या में तीर्थयात्रियों ने पवित्र स्थानों का दर्शन किया है।"
+        : "This year's Char Dham Yatra has seen a record number of pilgrims visiting the holy sites.",
+      image_url: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800&h=600",
+      published_at: "2025-01-24T08:30:33.443768Z",
+      hours_ago: 4,
+    },
+  ]
 
-  if (!dashboardData?.success) {
-    return (
-      <div className="text-center text-muted-foreground p-8">
-        <p>{language === "hi" ? "समाचार लोड नहीं हो सके" : "Failed to load news"}</p>
-      </div>
-    )
-  }
-
-  const { breaking_news, latest_news_by_category } = dashboardData.data
-  const featuredNews = breaking_news.length > 0 ? breaking_news[0] : latest_news_by_category[0]
-  const sideNews = breaking_news.length > 1 ? breaking_news.slice(1, 3) : latest_news_by_category.slice(1, 3)
+  const { breaking_news, latest_news_by_category } = dashboardData?.data || { breaking_news: [], latest_news_by_category: [] }
+  const newsToShow = breaking_news.length > 0 ? breaking_news : latest_news_by_category.length > 0 ? latest_news_by_category : fallbackNews
+  
+  const featuredNews = newsToShow[0]
+  const sideNews = newsToShow.slice(1, 3)
 
   if (!featuredNews) {
     return (
       <div className="text-center text-muted-foreground p-8">
-        <p>{language === "hi" ? "कोई समाचार उपलब्ध नहीं है" : "No news available"}</p>
+        <p>{language === "hi" ? "कोई समाचार उपलब्ध नहीं" : "No news available"}</p>
       </div>
     )
   }
@@ -153,13 +115,8 @@ export default function FeaturedNews() {
           <div className="relative aspect-[16/9] w-full">
             <img
               src={featuredNews.image_url || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600"}
-              alt={featuredNews.title[language]}
+              alt={language === "hi" ? featuredNews.title.hi : featuredNews.title.en}
               className="w-full h-full object-cover"
-              loading="eager"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement
-                target.src = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600"
-              }}
             />
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
@@ -169,8 +126,12 @@ export default function FeaturedNews() {
                 {language === "hi" ? "ब्रेकिंग न्यूज़" : "Breaking News"}
               </Badge>
             )}
-            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-2">{featuredNews.title[language]}</h2>
-            <p className="text-sm md:text-base opacity-90 mb-2 line-clamp-2">{featuredNews.description}</p>
+            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-2">
+              {language === "hi" ? featuredNews.title.hi : featuredNews.title.en}
+            </h2>
+            <p className="text-sm md:text-base opacity-90 mb-2 line-clamp-2">
+              {featuredNews.description}
+            </p>
             <div className="flex items-center text-xs md:text-sm space-x-4">
               <div className="flex items-center">
                 <CalendarDays className="h-3 w-3 mr-1" />
@@ -193,17 +154,12 @@ export default function FeaturedNews() {
                 <div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg mb-3">
                   <img
                     src={news.image_url || "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=600&h=400"}
-                    alt={news.title[language]}
+                    alt={language === "hi" ? news.title.hi : news.title.en}
                     className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                    loading="lazy"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement
-                      target.src = "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=600&h=400"
-                    }}
                   />
                 </div>
                 <h3 className="text-lg font-semibold group-hover:text-primary transition-colors">
-                  {news.title[language]}
+                  {language === "hi" ? news.title.hi : news.title.en}
                 </h3>
                 <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{news.description}</p>
                 <div className="flex items-center text-xs text-muted-foreground mt-2 space-x-4">

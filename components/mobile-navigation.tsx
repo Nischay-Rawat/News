@@ -16,8 +16,9 @@ interface Category {
 }
 
 interface City {
-  key?: string
+  key: string
   name: string
+  name_hi?: string
   count: number
 }
 
@@ -51,7 +52,7 @@ export default function MobileNavigation({ categories, cities }: MobileNavigatio
             className="block py-2 px-3 rounded-md hover:bg-muted transition-colors"
             onClick={() => setOpen(false)}
           >
-            {t.nav.home}
+            {t?.nav?.home || (language === "hi" ? "होम" : "Home")}
           </Link>
 
           <Accordion type="single" collapsible className="w-full">
@@ -60,11 +61,11 @@ export default function MobileNavigation({ categories, cities }: MobileNavigatio
                 {language === "hi" ? "श्रेणियाँ" : "Categories"}
               </AccordionTrigger>
               <AccordionContent>
-                <div className="pl-4 space-y-1 mt-1">
+                <div className="pl-4 space-y-1 mt-1 max-h-60 overflow-y-auto">
                   {categories.map((category) => (
                     <Link
                       key={category.key}
-                      href={`/category/${category.name_en.toLowerCase()}`}
+                      href={`/category/${category.key}`}
                       className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-muted transition-colors"
                       onClick={() => setOpen(false)}
                     >
@@ -81,15 +82,15 @@ export default function MobileNavigation({ categories, cities }: MobileNavigatio
                 {language === "hi" ? "शहर" : "Cities"}
               </AccordionTrigger>
               <AccordionContent>
-                <div className="pl-4 space-y-1 mt-1">
-                  {cities.map((city, index) => (
+                <div className="pl-4 space-y-1 mt-1 max-h-60 overflow-y-auto">
+                  {cities.map((city) => (
                     <Link
-                      key={city.key || `city-${index}`}
-                      href="#"
+                      key={city.key}
+                      href={`/city/${city.key}`}
                       className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-muted transition-colors"
                       onClick={() => setOpen(false)}
                     >
-                      <span>{city.name}</span>
+                      <span>{language === "hi" && city.name_hi ? city.name_hi : city.name}</span>
                       {city.count > 0 && <span className="text-xs text-muted-foreground">({city.count})</span>}
                     </Link>
                   ))}
@@ -100,7 +101,23 @@ export default function MobileNavigation({ categories, cities }: MobileNavigatio
 
           <div className="border-t pt-4 mt-4">
             <Link
-              href="#"
+              href="/categories"
+              className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-muted transition-colors"
+              onClick={() => setOpen(false)}
+            >
+              <span>{language === "hi" ? "सभी श्रेणियाँ" : "All Categories"}</span>
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/cities"
+              className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-muted transition-colors"
+              onClick={() => setOpen(false)}
+            >
+              <span>{language === "hi" ? "सभी शहर" : "All Cities"}</span>
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/about"
               className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-muted transition-colors"
               onClick={() => setOpen(false)}
             >
@@ -108,7 +125,7 @@ export default function MobileNavigation({ categories, cities }: MobileNavigatio
               <ChevronRight className="h-4 w-4" />
             </Link>
             <Link
-              href="#"
+              href="/contact"
               className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-muted transition-colors"
               onClick={() => setOpen(false)}
             >

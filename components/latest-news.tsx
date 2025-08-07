@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Clock, MapPin } from 'lucide-react'
-import { useLanguage } from "@/components/language-provider"
+import { Clock, MapPin, Loader2 } from 'lucide-react'
 
 interface NewsItem {
   slug: string
@@ -26,8 +25,23 @@ interface NewsItem {
   views?: number
 }
 
+interface DashboardData {
+  success: boolean
+  data: {
+    latest_news_by_category: NewsItem[]
+  }
+}
+
+interface CategoryApiResponse {
+  success: boolean
+  data: {
+    data: NewsItem[]
+  }
+}
+
 interface LatestNewsProps {
   category?: string
+  dashboardData?: DashboardData | null
 }
 
 const mockNewsData: NewsItem[] = [
@@ -37,7 +51,7 @@ const mockNewsData: NewsItem[] = [
       hi: "उत्तराखंड के स्कूलों में नई शिक्षा नीति लागू, छात्रों में उत्साह",
       en: "New education policy implemented in Uttarakhand schools, enthusiasm among students",
     },
-    description: "राज्य के सभी सरकारी स्कूलों में नई शिक्षा नीति लागू की गई है।",
+    description: "New education policy has been implemented in all government schools of the state.",
     image_url: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400&h=300",
     category: {
       name_en: "Education",
@@ -57,7 +71,7 @@ const mockNewsData: NewsItem[] = [
       hi: "मसूरी में पर्यटकों की भीड़, होटल व्यवसायियों ने की रिकॉर्ड कमाई",
       en: "Tourist rush in Mussoorie, hotel businessmen make record earnings",
     },
-    description: "गर्मियों की छुट्टियों में मसूरी में पर्यटकों की भारी भीड़ देखी जा रही है।",
+    description: "Heavy rush of tourists is being seen in Mussoorie during the summer holidays.",
     image_url: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&h=300",
     category: {
       name_en: "Tourism",
@@ -77,7 +91,7 @@ const mockNewsData: NewsItem[] = [
       hi: "हरिद्वार में चुनावी तैयारियां तेज, प्रशासन ने जारी की गाइडलाइन",
       en: "Election preparations intensify in Haridwar, administration issues guidelines",
     },
-    description: "आगामी चुनावों को लेकर हरिद्वार में तैयारियां तेज हो गई हैं।",
+    description: "Preparations for the upcoming elections have intensified in Haridwar.",
     image_url: "https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=400&h=300",
     category: {
       name_en: "Politics",
@@ -97,7 +111,7 @@ const mockNewsData: NewsItem[] = [
       hi: "नैनीताल में स्वास्थ्य सेवाओं का विस्तार, नई योजना की शुरुआत",
       en: "Expansion of health services in Nainital, new scheme launched",
     },
-    description: "नैनीताल में स्वास्थ्य सेवाओं के विस्तार के लिए नई योजना शुरू की गई है।",
+    description: "A new scheme has been launched for the expansion of health services in Nainital.",
     image_url: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=400&h=300",
     category: {
       name_en: "Health",
@@ -113,50 +127,110 @@ const mockNewsData: NewsItem[] = [
   },
 ]
 
-export default function LatestNews({ category = "latest" }: LatestNewsProps) {
-  const { language } = useLanguage()
-  const [newsData, setNewsData] = useState<NewsItem[]>(mockNewsData)
+export default function LatestNews({ category, dashboardData }: LatestNewsProps) {
+  const [categoryNews, setCategoryNews] = useState<NewsItem[]>([])
   const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("https://api.garhwalisonglyrics.com/api/v1/news/dashboard")
-        if (response.ok) {
-          const data = await response.json()
-          if (data.success && data.data.latest_news_by_category) {
-            setNewsData(data.data.latest_news_by_category)
-          }
-        }
-      } catch (error) {
-        console.warn("Using fallback data")
-      }
-    }
-
-    fetchData()
-  }, [])
+  const [error, setError] = useState<string | null>(null)
 
   const formatTimeAgo = (hoursAgo: number) => {
     if (hoursAgo < 1) {
-      return language === "hi" ? "अभी" : "Now"
+      return "Now"
     } else if (hoursAgo < 24) {
-      return language === "hi" ? `${Math.floor(hoursAgo)} घंटे पहले` : `${Math.floor(hoursAgo)} hours ago`
+      return `${Math.floor(hoursAgo)} hours ago`
     } else {
       const daysAgo = Math.floor(hoursAgo / 24)
-      return language === "hi" ? `${daysAgo} दिन पहले` : `${daysAgo} days ago`
+      return `${daysAgo} days ago`
     }
+  }
+
+  // Fetch category-specific news when category changes
+  useEffect(() => {
+    async function fetchCategoryNews() {
+      if (!category || category === "latest") {
+        setCategoryNews([])
+        return
+      }
+
+      setLoading(true)
+      setError(null)
+
+      try {
+        const response = await fetch(
+          `https://api.garhwalisonglyrics.com/api/v1/news/category/${category}?page=1&limit=8`,
+          {
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            }
+          }
+        )
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const data: CategoryApiResponse = await response.json()
+        
+        if (data.success && data.data.data) {
+          setCategoryNews(data.data.data)
+        } else {
+          setCategoryNews([])
+        }
+      } catch (err) {
+        console.error('Error fetching category news:', err)
+        setError('Failed to load category news')
+        setCategoryNews([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCategoryNews()
+  }, [category])
+
+  // Determine which data to show
+  let newsData: NewsItem[] = []
+  
+  if (!category || category === "latest") {
+    // Show dashboard data for latest news
+    newsData = dashboardData?.data?.latest_news_by_category || mockNewsData
+  } else {
+    // Show category-specific data
+    newsData = categoryNews
   }
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="space-y-3">
-            <div className="aspect-[4/3] w-full bg-muted rounded-lg animate-pulse"></div>
-            <div className="h-4 bg-muted rounded animate-pulse"></div>
-            <div className="h-3 bg-muted rounded w-3/4 animate-pulse"></div>
-          </div>
-        ))}
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading {category} news...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-500 mb-4">{error}</p>
+        <p className="text-muted-foreground">Please try again later.</p>
+      </div>
+    )
+  }
+
+  if (newsData.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground mb-4">
+          {category && category !== "latest" 
+            ? `No news available in ${category} category at the moment.`
+            : "No news available"
+          }
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Try checking other categories or come back later for updates.
+        </p>
       </div>
     )
   }
@@ -169,9 +243,8 @@ export default function LatestNews({ category = "latest" }: LatestNewsProps) {
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg mb-3">
               <img
                 src={news.image_url || "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400&h=300"}
-                alt={news.title[language]}
+                alt={news.title.en}
                 className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                loading="lazy"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement
                   target.src = "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=400&h=300"
@@ -179,14 +252,14 @@ export default function LatestNews({ category = "latest" }: LatestNewsProps) {
               />
             </div>
             <h3 className="text-base font-semibold group-hover:text-primary transition-colors line-clamp-2">
-              {news.title[language]}
+              {news.title.en}
             </h3>
             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{news.description}</p>
             <div className="flex items-center text-xs text-muted-foreground mt-2 space-x-3">
               {news.city && (
                 <div className="flex items-center">
                   <MapPin className="h-3 w-3 mr-1" />
-                  <span>{typeof news.city === "string" ? news.city : news.city[language] || news.city.hi}</span>
+                  <span>{typeof news.city === "string" ? news.city : news.city.en || news.city.hi}</span>
                 </div>
               )}
               <div className="flex items-center">
@@ -196,12 +269,12 @@ export default function LatestNews({ category = "latest" }: LatestNewsProps) {
             </div>
             {news.category && (
               <div className="text-xs text-primary mt-1 font-medium">
-                {language === "hi" ? news.category.name_hi : news.category.name_en}
+                {news.category.name_en}
               </div>
             )}
             {news.views && news.views > 0 && (
               <div className="text-xs text-muted-foreground mt-1">
-                {news.views} {language === "hi" ? "बार देखा गया" : "views"}
+                {news.views} views
               </div>
             )}
           </Link>
